@@ -459,22 +459,104 @@ function waitForNextFrame() {
   return new Promise(resolve => requestAnimationFrame(() => resolve()));
 }
 
+function createPdfSnapshotNode(source) {
+  const cloneNode = source.cloneNode(true);
+  cloneNode.id = "pdfAreaSnapshot";
+  cloneNode.querySelectorAll(".btn-icon, .btn-settings, #bannerContainer").forEach(el => el.remove());
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "pdf-snapshot-wrap";
+  wrapper.appendChild(cloneNode);
+  document.body.appendChild(wrapper);
+  return { wrapper, snapshot: cloneNode };
+}
+
+async function capturePdfAreaCanvas() {
+  const source = document.getElementById("pdfArea");
+  if (!source) throw new Error("PDF target is missing");
+
+  const { wrapper, snapshot } = createPdfSnapshotNode(source);
+  try {
+    await waitForNextFrame();
+    await waitForNextFrame();
+
+    if (typeof window.html2canvas === "function") {
+      return await window.html2canvas(snapshot, {
+        scale: 3,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false
+      });
+    }
+
+    const worker = html2pdf()
+      .set({
+        html2canvas: {
+          scale: 3,
+          useCORS: true,
+          backgroundColor: "#ffffff",
+          logging: false
+        }
+      })
+      .from(snapshot)
+      .toCanvas();
+    await worker;
+    return await worker.get("canvas");
+  } finally {
+    wrapper.remove();
+  }
+}
+
+async function getJsPdfCtor() {
+  if (window.jspdf?.jsPDF) return window.jspdf.jsPDF;
+  if (window.jsPDF) return window.jsPDF;
+
+  const seed = document.createElement("canvas");
+  seed.width = 1;
+  seed.height = 1;
+  const worker = html2pdf()
+    .set({ jsPDF: { unit: "mm", format: "a4", orientation: "landscape" } })
+    .from(seed, "canvas")
+    .toPdf();
+  await worker;
+  const pdf = await worker.get("pdf");
+  return pdf.constructor;
+}
+
+function drawCanvasToPdfPage(pdf, canvas, marginMm = 4) {
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageHeight = pdf.internal.pageSize.getHeight();
+  const maxWidth = pageWidth - marginMm * 2;
+  const maxHeight = pageHeight - marginMm * 2;
+  const ratio = Math.min(maxWidth / canvas.width, maxHeight / canvas.height);
+  const drawWidth = canvas.width * ratio;
+  const drawHeight = canvas.height * ratio;
+  const offsetX = (pageWidth - drawWidth) / 2;
+  const offsetY = (pageHeight - drawHeight) / 2;
+  pdf.addImage(canvas.toDataURL("image/jpeg", 0.98), "JPEG", offsetX, offsetY, drawWidth, drawHeight);
+}
+
+async function saveCanvasPdf(canvases, filename) {
+  const PdfCtor = await getJsPdfCtor();
+  const pdf = new PdfCtor({ unit: "mm", format: "a4", orientation: "landscape", compress: false });
+
+  canvases.forEach((canvas, index) => {
+    if (index > 0) pdf.addPage("a4", "landscape");
+    drawCanvasToPdfPage(pdf, canvas);
+  });
+
+  pdf.save(filename);
+}
+
 async function exportCurrentMonthPdf() {
   if (isExporting || typeof html2pdf === "undefined") return;
   isExporting = true;
-  const target = document.getElementById("pdfArea");
   const filename = `53-calendar-${currentDate.getFullYear()}-${pad2(currentDate.getMonth() + 1)}.pdf`;
 
   try {
     document.body.classList.add("exporting-pdf");
-    await waitForNextFrame();
-    await html2pdf().set({
-      margin: 4,
-      filename,
-      image: { type: "png", quality: 1 },
-      html2canvas: { scale: 3, useCORS: true, backgroundColor: "#ffffff", logging: false },
-      jsPDF: { unit: "mm", format: "a4", orientation: "landscape" }
-    }).from(target).save();
+    const canvas = await capturePdfAreaCanvas();
+    await saveCanvasPdf([canvas], filename);
   } catch (err) {
     console.error(err);
     alert("PDF の生成に失敗しました。時間をおいてもう一度お試しください。");
@@ -489,38 +571,23 @@ async function exportWholeYearPdf() {
   isExporting = true;
   const backupDate = new Date(currentDate);
   const year = backupDate.getFullYear();
-  const tempRoot = document.createElement("div");
-  tempRoot.id = "yearlyPdfArea";
 
   try {
     document.body.classList.add("exporting-pdf", "exporting-yearly-pdf");
-    document.body.appendChild(tempRoot);
+    const canvases = [];
 
     for (let month = 0; month < 12; month++) {
       currentDate = startOfDay(new Date(year, month, 1));
       renderCalendar();
       await waitForNextFrame();
-      const page = document.createElement("div");
-      page.className = "yearly-print-page";
-      const cloneNode = document.getElementById("pdfArea").cloneNode(true);
-      cloneNode.querySelectorAll(".btn-icon, .btn-settings, #bannerContainer").forEach(el => el.remove());
-      page.appendChild(cloneNode);
-      tempRoot.appendChild(page);
+      canvases.push(await capturePdfAreaCanvas());
     }
 
-    await html2pdf().set({
-      margin: 4,
-      filename: `53-calendar-${year}-12months.pdf`,
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", logging: false },
-      jsPDF: { unit: "mm", format: "a4", orientation: "landscape" },
-      pagebreak: { mode: ["css"], avoid: [".yearly-print-page"] }
-    }).from(tempRoot).save();
+    await saveCanvasPdf(canvases, `53-calendar-${year}-12months.pdf`);
   } catch (err) {
     console.error(err);
     alert("年間 PDF の生成に失敗しました。時間をおいてもう一度お試しください。");
   } finally {
-    tempRoot.remove();
     currentDate = backupDate;
     renderCalendar();
     document.body.classList.remove("exporting-pdf", "exporting-yearly-pdf");

@@ -528,6 +528,27 @@ body.exporting-pdf .header {
   justify-content: center;
 }
 
+.pdf-snapshot-wrap {
+  position: fixed;
+  top: 0;
+  left: -10000px;
+  z-index: -1;
+  width: 1280px;
+  background: #ffffff;
+  pointer-events: none;
+}
+
+.pdf-snapshot-wrap #pdfAreaSnapshot {
+  width: 1280px;
+  max-width: 1280px;
+  margin: 0;
+  padding: 0 10px 10px;
+}
+
+.pdf-snapshot-wrap .calendar-container {
+  box-shadow: none;
+}
+
 .yearly-print-page {
   width: 1080px;
   height: 760px;
