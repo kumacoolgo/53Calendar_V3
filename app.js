@@ -33,6 +33,7 @@ const DEFAULT_LABELS_BY_ID = Object.fromEntries(DEFAULT_TYPES.map(type => [type.
 
 const STORAGE_KEY = "calendar53-state-v3";
 const WIDGET_KEY = "calendar53-widget-data";
+const APP_BUILD = "pdf-one-page-2";
 const HOLIDAY_API_URL = "https://holidays-jp.github.io/api/v1/date.json";
 const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
 
@@ -43,6 +44,8 @@ let holidaysMap = null;
 let holidaysLoaded = false;
 let renderTimer = null;
 let isExporting = false;
+
+console.info(`53 Calendar build: ${APP_BUILD}`);
 
 function startOfDay(date) {
   const next = new Date(date);
