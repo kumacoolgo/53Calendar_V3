@@ -23,6 +23,25 @@ npm run serve
 
 `index.html` を直接開いても動作しますが、PWA のオフラインキャッシュや一部のモバイルインストール機能には HTTP/HTTPS 環境が必要です。
 
+## Docker / Zeabur
+
+このリポジトリは GitHub Actions で Docker イメージを自動公開します。
+
+Zeabur では次のイメージ名を指定します。
+
+```text
+ghcr.io/kumacoolgo/53calendar-v3:latest
+```
+
+手元でビルドする場合は次のコマンドを使います。
+
+```bash
+docker build -t ghcr.io/kumacoolgo/53calendar-v3:latest .
+docker run --rm -p 8080:80 ghcr.io/kumacoolgo/53calendar-v3:latest
+```
+
+GitHub Container Registry のパッケージが private の場合、Zeabur から取得できません。GitHub の Packages 画面で `53calendar-v3` を public にしてください。
+
 ## ウィジェット用データ
 
 メインアプリは今月のデータを以下に出力します。
