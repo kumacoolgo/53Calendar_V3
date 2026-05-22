@@ -1,0 +1,142 @@
+:root {
+  --text-main: #172033;
+  --text-sub: #667085;
+  --border: #dde3ee;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: #fff;
+  color: var(--text-main);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Microsoft YaHei", sans-serif;
+}
+
+.widget-shell {
+  width: 100vw;
+  min-height: 100vh;
+  padding: 14px;
+  background: #fff;
+}
+
+.widget-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.eyebrow {
+  color: var(--text-sub);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+h1 {
+  margin: 1px 0 0;
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.today-pill {
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #fffbeb;
+  color: #92400e;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.widget-weekdays,
+.widget-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.widget-weekdays {
+  margin-bottom: 4px;
+}
+
+.widget-weekdays div {
+  text-align: center;
+  color: var(--text-sub);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.widget-weekdays .sun,
+.widget-day.sun .date {
+  color: #dc2626;
+}
+
+.widget-weekdays .sat,
+.widget-day.sat .date {
+  color: #2563eb;
+}
+
+.widget-grid {
+  gap: 3px;
+}
+
+.widget-day {
+  min-height: 46px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  overflow: hidden;
+}
+
+.widget-day.empty {
+  border-color: transparent;
+}
+
+.widget-day.today {
+  border-color: #f59e0b;
+  background: #fffbeb;
+}
+
+.date {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.chip {
+  margin-top: 3px;
+  padding: 2px 3px;
+  border-radius: 4px;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.more {
+  margin-left: 2px;
+}
+
+@media (max-width: 260px) {
+  .widget-shell {
+    padding: 10px;
+  }
+
+  h1 {
+    font-size: 18px;
+  }
+
+  .widget-day {
+    min-height: 38px;
+    padding: 3px;
+  }
+
+  .chip {
+    display: none;
+  }
+}

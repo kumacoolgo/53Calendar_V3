@@ -1,0 +1,619 @@
+:root {
+  --primary: #2563eb;
+  --bg-body: #f8fafc;
+  --bg-card: #ffffff;
+  --text-main: #172033;
+  --text-sub: #667085;
+  --border: #dde3ee;
+  --shadow: 0 8px 28px rgba(15, 23, 42, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  min-height: 100vh;
+  margin: 0;
+  padding: calc(env(safe-area-inset-top) + 10px) 12px 32px;
+  background: var(--bg-body);
+  color: var(--text-main);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Microsoft YaHei", sans-serif;
+}
+
+button {
+  font: inherit;
+}
+
+#pdfArea {
+  max-width: 1300px;
+  margin: 0 auto 28px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  margin: 10px 0 12px;
+  padding: 0 8px;
+}
+
+.month-nav,
+.header-actions,
+.setting-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.month-title {
+  min-width: 150px;
+  text-align: center;
+  font-size: 28px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.btn-icon,
+.btn-settings,
+.modal-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--text-main);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+  cursor: pointer;
+}
+
+.btn-icon:active,
+.btn-settings:active,
+.toggle-btn:active,
+.mode-option:active {
+  transform: scale(0.96);
+}
+
+.btn-today {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.tomorrow-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin: 0 0 18px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 650;
+  box-shadow: 0 5px 18px rgba(239, 68, 68, 0.24);
+}
+
+.tomorrow-banner small {
+  display: block;
+  margin-top: 4px;
+  font-weight: 400;
+  opacity: 0.9;
+}
+
+.calendar-container {
+  overflow: hidden;
+  border: 2px solid var(--border);
+  border-radius: 18px;
+  background: var(--bg-card);
+  box-shadow: var(--shadow);
+}
+
+.calendar-inner {
+  width: 100%;
+}
+
+.weekdays,
+.days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+
+.weekdays {
+  border-bottom: 2px solid var(--border);
+  background: #f1f5f9;
+}
+
+.weekdays div {
+  padding: 13px 0;
+  text-align: center;
+  color: var(--text-sub);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.days-grid {
+  grid-auto-rows: minmax(120px, auto);
+}
+
+.day-cell {
+  min-width: 0;
+  margin: 0;
+  padding: 7px;
+  border: 0;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: #fff;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.day-cell:nth-child(7n) {
+  border-right: none;
+}
+
+.day-cell:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.28);
+  outline-offset: -3px;
+}
+
+.day-cell.other-month {
+  cursor: default;
+  opacity: 0.45;
+  background: #f8fafc;
+}
+
+.day-cell.today {
+  background: #fffbeb;
+}
+
+.day-cell.today::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2px solid #f59e0b;
+  pointer-events: none;
+}
+
+.date-num {
+  margin-bottom: 6px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.sun .date-num,
+.holiday .date-num {
+  color: #dc2626;
+}
+
+.sat .date-num {
+  color: #2563eb;
+}
+
+.labels-container {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mini-label {
+  max-width: 100%;
+  overflow: hidden;
+  padding: 3px 6px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.legend {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding-bottom: 24px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--text-sub);
+  font-size: 13px;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  background: rgba(15, 23, 42, 0.42);
+  backdrop-filter: blur(4px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.modal-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal-card {
+  display: flex;
+  flex-direction: column;
+  width: min(640px, 100%);
+  max-height: 86vh;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.2);
+}
+
+.modal-card-sm {
+  width: min(420px, 100%);
+}
+
+.modal-header,
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-footer {
+  justify-content: flex-end;
+  border-top: 1px solid var(--border);
+  border-bottom: 0;
+  background: #f8fafc;
+}
+
+.modal-title {
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.modal-close-btn {
+  width: 36px;
+  height: 36px;
+  box-shadow: none;
+}
+
+.modal-body {
+  overflow-y: auto;
+  padding: 18px;
+}
+
+.settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.setting-group {
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+}
+
+.setting-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.setting-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.setting-indicator {
+  flex: 0 0 auto;
+  width: 4px;
+  height: 18px;
+  border-radius: 2px;
+}
+
+.delete-type-btn {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-sub);
+  cursor: pointer;
+}
+
+.badge-muted {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #e5e7eb;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.mode-selector,
+.week-selector,
+.nth-selector {
+  display: flex;
+  gap: 8px;
+}
+
+.mode-selector {
+  padding: 4px;
+  border-radius: 9px;
+  background: #f1f5f9;
+}
+
+.mode-option,
+.toggle-btn {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-sub);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.mode-option {
+  padding: 9px 4px;
+}
+
+.mode-option.active {
+  background: #fff;
+  color: var(--text-main);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.option-label {
+  margin: 12px 0 6px;
+  color: var(--text-sub);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.toggle-btn {
+  height: 38px;
+  border-color: var(--border);
+  background: #fff;
+}
+
+.toggle-btn.active {
+  border-color: var(--text-main);
+  background: var(--text-main);
+  color: #fff;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.btn-save,
+.btn-reset,
+.btn-add-type {
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.btn-save {
+  padding: 10px 24px;
+  background: var(--text-main);
+  color: #fff;
+}
+
+.btn-reset {
+  padding: 10px 16px;
+  background: transparent;
+  color: #dc2626;
+}
+
+.btn-add-type {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 14px;
+  padding: 9px 15px;
+  background: var(--primary);
+  color: #fff;
+}
+
+.print-choice-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.print-choice-actions .btn-save {
+  flex: 1;
+}
+
+.detail-date {
+  margin-bottom: 5px;
+  font-size: 22px;
+  font-weight: 850;
+}
+
+.detail-meta {
+  margin-bottom: 18px;
+  color: var(--text-sub);
+  font-size: 14px;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 10px;
+  padding: 14px;
+  border: 1px solid transparent;
+  border-left: 4px solid;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.detail-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  font-size: 20px;
+}
+
+.detail-name {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.detail-empty {
+  padding: 32px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  background: #f8fafc;
+  color: var(--text-sub);
+  text-align: center;
+}
+
+body.exporting-pdf #bannerContainer,
+body.exporting-pdf .legend,
+body.exporting-pdf .btn-icon,
+body.exporting-pdf .btn-settings {
+  display: none !important;
+}
+
+body.exporting-pdf .header {
+  justify-content: center;
+}
+
+.yearly-print-page {
+  width: 1080px;
+  height: 760px;
+  overflow: hidden;
+  break-after: page;
+  page-break-after: always;
+  background: #fff;
+}
+
+.yearly-print-page:last-child {
+  break-after: auto;
+  page-break-after: auto;
+}
+
+@media (max-width: 640px) {
+  body {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .header {
+    flex-direction: column;
+  }
+
+  .month-nav,
+  .header-actions {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .month-title {
+    min-width: 128px;
+    font-size: 24px;
+  }
+
+  .days-grid {
+    grid-auto-rows: minmax(88px, auto);
+  }
+
+  .weekdays div {
+    padding: 10px 0;
+    font-size: 12px;
+  }
+
+  .day-cell {
+    padding: 5px;
+  }
+
+  .date-num {
+    font-size: 15px;
+  }
+
+  .mini-label {
+    padding: 2px 4px;
+    font-size: 10px;
+    white-space: normal;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-body: #101828;
+    --bg-card: #111827;
+    --text-main: #f3f4f6;
+    --text-sub: #aeb7c7;
+    --border: #243044;
+  }
+
+  .calendar-container,
+  .day-cell,
+  .legend-item,
+  .modal-card,
+  .setting-group,
+  .btn-icon,
+  .btn-settings,
+  .modal-close-btn,
+  .toggle-btn,
+  .mode-option.active {
+    background: var(--bg-card);
+  }
+
+  .weekdays,
+  .mode-selector,
+  .modal-footer,
+  .detail-empty,
+  .detail-item {
+    background: #172033;
+  }
+}

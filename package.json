@@ -1,0 +1,13 @@
+{
+  "name": "53calendar-v3",
+  "version": "3.0.0",
+  "private": true,
+  "description": "53 Calendar web app with widget-ready month data output.",
+  "scripts": {
+    "serve": "npx http-server . -p 4173 -c-1",
+    "check": "node --check app.js && node --check widget.js"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}
