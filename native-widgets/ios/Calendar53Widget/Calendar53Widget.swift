@@ -26,7 +26,7 @@ struct Calendar53Month: Codable {
     let weekdays: [String]
     let days: [Calendar53Day]
 
-    static let fallback = Calendar53Month(title: "53 Calendar", weekdays: ["日", "一", "二", "三", "四", "五", "六"], days: [])
+    static let fallback = Calendar53Month(title: "53 Calendar", weekdays: ["日", "月", "火", "水", "木", "金", "土"], days: [])
 }
 
 struct Calendar53Entry: TimelineEntry {
@@ -155,7 +155,7 @@ struct Calendar53Widget: Widget {
             Calendar53WidgetView(entry: entry)
         }
         .configurationDisplayName("53 Calendar")
-        .description("在桌面直接查看当前月垃圾收集安排。")
+        .description("ホーム画面で今月のごみ収集予定を確認できます。")
         .supportedFamilies([.systemMedium, .systemLarge])
     }
 }

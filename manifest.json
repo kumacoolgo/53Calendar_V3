@@ -1,7 +1,7 @@
 {
   "name": "53 Calendar",
   "short_name": "53Calendar",
-  "description": "可自定义规则的垃圾收集日历，支持 PWA 与原生桌面小组件数据输出。",
+  "description": "収集ルールを自由に設定できる日本向けごみ収集カレンダー。PWA とホーム画面ウィジェット用データ出力に対応。",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
@@ -25,8 +25,8 @@
   ],
   "shortcuts": [
     {
-      "name": "查看本月小组件视图",
-      "short_name": "小组件",
+      "name": "今月のウィジェット表示",
+      "short_name": "ウィジェット",
       "url": "./widget.html",
       "icons": [{ "src": "icon.png", "sizes": "192x192" }]
     }

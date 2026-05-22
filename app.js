@@ -10,13 +10,13 @@ const COLOR_PALETTE = [
 ];
 
 const DEFAULT_TYPES = [
-  { id: "burnable", label: "可燃垃圾", color: "#ef4444", bgColor: "#fee2e2", textColor: "#991b1b", icon: "fa-fire" },
-  { id: "nonburnable", label: "不可燃垃圾", color: "#374151", bgColor: "#f3f4f6", textColor: "#374151", icon: "fa-battery-full" },
-  { id: "plastic", label: "塑料包装", color: "#1d4ed8", bgColor: "#dbeafe", textColor: "#1e40af", icon: "fa-bottle-water" },
-  { id: "paper", label: "纸类/纸箱", color: "#a16207", bgColor: "#fef9c3", textColor: "#854d0e", icon: "fa-newspaper" },
-  { id: "pet", label: "PET 瓶", color: "#15803d", bgColor: "#dcfce7", textColor: "#166534", icon: "fa-recycle" },
-  { id: "tray", label: "食品托盘", color: "#4338ca", bgColor: "#e0e7ff", textColor: "#3730a3", icon: "fa-utensils" },
-  { id: "cloth", label: "旧衣物", color: "#a21caf", bgColor: "#fae8ff", textColor: "#86198f", icon: "fa-shirt" }
+  { id: "burnable", label: "燃えるごみ", color: "#ef4444", bgColor: "#fee2e2", textColor: "#991b1b", icon: "fa-fire" },
+  { id: "nonburnable", label: "燃えないごみ", color: "#374151", bgColor: "#f3f4f6", textColor: "#374151", icon: "fa-battery-full" },
+  { id: "plastic", label: "プラスチック", color: "#1d4ed8", bgColor: "#dbeafe", textColor: "#1e40af", icon: "fa-bottle-water" },
+  { id: "paper", label: "古紙・段ボール", color: "#a16207", bgColor: "#fef9c3", textColor: "#854d0e", icon: "fa-newspaper" },
+  { id: "pet", label: "ペットボトル", color: "#15803d", bgColor: "#dcfce7", textColor: "#166534", icon: "fa-recycle" },
+  { id: "tray", label: "食品トレー", color: "#4338ca", bgColor: "#e0e7ff", textColor: "#3730a3", icon: "fa-utensils" },
+  { id: "cloth", label: "古着", color: "#a21caf", bgColor: "#fae8ff", textColor: "#86198f", icon: "fa-shirt" }
 ];
 
 const DEFAULT_RULES = {
@@ -29,10 +29,12 @@ const DEFAULT_RULES = {
   cloth: { mode: "weekly", weekdays: [5], nth: [] }
 };
 
+const DEFAULT_LABELS_BY_ID = Object.fromEntries(DEFAULT_TYPES.map(type => [type.id, type.label]));
+
 const STORAGE_KEY = "calendar53-state-v3";
 const WIDGET_KEY = "calendar53-widget-data";
 const HOLIDAY_API_URL = "https://holidays-jp.github.io/api/v1/date.json";
-const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
+const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
 
 let types = [];
 let rules = {};
@@ -82,6 +84,10 @@ function loadState() {
     const loadedTypes = Array.isArray(parsed.types) && parsed.types.length ? parsed.types : DEFAULT_TYPES;
     const loadedRules = parsed.rules && typeof parsed.rules === "object" ? parsed.rules : DEFAULT_RULES;
     const state = { types: clone(loadedTypes), rules: clone(loadedRules) };
+    state.types = state.types.map(type => ({
+      ...type,
+      label: DEFAULT_LABELS_BY_ID[type.id] || type.label
+    }));
 
     state.types.forEach(type => {
       if (!state.rules[type.id]) {
@@ -190,7 +196,7 @@ function fetchHolidays() {
       publishWidgetData();
     })
     .catch(err => {
-      console.warn("节假日数据获取失败，将使用本地规则继续显示。", err);
+      console.warn("祝日データの取得に失敗しました。ローカルの収集ルールで表示を続けます。", err);
       holidaysLoaded = false;
       publishWidgetData();
     });
@@ -265,8 +271,8 @@ function renderTomorrowBanner() {
   banner.innerHTML = `
     <i class="fa-solid fa-bell"></i>
     <div class="banner-content">
-      <div>明天（${tomorrow.getMonth() + 1}月${tomorrow.getDate()}日）是 <strong>${list.map(t => t.label).join("、")}</strong> 的收集日</div>
-      <small>把要丢的物品提前准备好</small>
+      <div>明日（${tomorrow.getMonth() + 1}月${tomorrow.getDate()}日）は <strong>${list.map(t => t.label).join("、")}</strong> の収集日です</div>
+      <small>出し忘れないように準備しておきましょう</small>
     </div>
   `;
   container.appendChild(banner);
@@ -286,13 +292,13 @@ function openDetail(date, list, holidayNameFromCell) {
   const nth = Math.floor((date.getDate() - 1) / 7) + 1;
   const holidayName = holidayNameFromCell || getHolidayName(date);
   document.getElementById("detailDateStr").textContent =
-    `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日（周${WEEKDAYS[date.getDay()]}）`;
+    `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日（${WEEKDAYS[date.getDay()]}）`;
   document.getElementById("detailMetaStr").textContent =
-    `第 ${nth} 周${holidayName ? ` · ${holidayName}` : ""}`;
+    `第${nth}週${holidayName ? ` · ${holidayName}` : ""}`;
 
   const container = document.getElementById("detailList");
   if (!list.length) {
-    container.innerHTML = `<div class="detail-empty"><i class="fa-regular fa-face-smile"></i><br>今天没有收集安排</div>`;
+    container.innerHTML = `<div class="detail-empty"><i class="fa-regular fa-face-smile"></i><br>今日の収集予定はありません</div>`;
   } else {
     container.innerHTML = list.map(item => `
       <div class="detail-item" style="border-left-color:${item.color}; border-left-width:4px;">
@@ -311,7 +317,7 @@ function slugify(name) {
 }
 
 function addCategory() {
-  const name = prompt("请输入新的垃圾分类名称");
+  const name = prompt("新しいごみ分類名を入力してください");
   if (!name || !name.trim()) return;
   const trimmed = name.trim();
   const baseId = slugify(trimmed);
@@ -330,11 +336,11 @@ function addCategory() {
 
 function deleteCategory(id) {
   if (types.length <= 1) {
-    alert("至少需要保留一个分类。");
+    alert("分類は少なくとも1つ必要です。");
     return;
   }
   const type = types.find(item => item.id === id);
-  if (!confirm(`删除「${type ? type.label : id}」吗？`)) return;
+  if (!confirm(`「${type ? type.label : id}」を削除しますか？`)) return;
   types = types.filter(item => item.id !== id);
   delete rules[id];
   persistState();
@@ -344,7 +350,7 @@ function deleteCategory(id) {
 }
 
 function resetAll() {
-  if (!confirm("恢复默认分类和收集规则吗？")) return;
+  if (!confirm("分類と収集ルールを初期設定に戻しますか？")) return;
   const state = createDefaultState();
   types = state.types;
   rules = state.rules;
@@ -372,19 +378,19 @@ function renderSettingsUI() {
           ${type.label}
         </div>
         <div class="setting-actions">
-          ${disabled ? '<span class="badge-muted">停用</span>' : ""}
-          <button class="delete-type-btn" type="button" title="删除" data-delete="${type.id}">
+          ${disabled ? '<span class="badge-muted">無効</span>' : ""}
+          <button class="delete-type-btn" type="button" title="削除" data-delete="${type.id}">
             <i class="fa-solid fa-trash-can"></i>
           </button>
         </div>
       </div>
       <div class="mode-selector">
-        <button class="mode-option ${rule.mode === "weekly" ? "active" : ""}" type="button" data-mode="weekly">每周</button>
-        <button class="mode-option ${rule.mode === "nth" ? "active" : ""}" type="button" data-mode="nth">指定周</button>
-        <button class="mode-option ${rule.mode === "off" ? "active" : ""}" type="button" data-mode="off">不显示</button>
+        <button class="mode-option ${rule.mode === "weekly" ? "active" : ""}" type="button" data-mode="weekly">毎週</button>
+        <button class="mode-option ${rule.mode === "nth" ? "active" : ""}" type="button" data-mode="nth">第何週</button>
+        <button class="mode-option ${rule.mode === "off" ? "active" : ""}" type="button" data-mode="off">表示しない</button>
       </div>
       <div class="options-container ${rule.mode === "off" ? "hidden" : ""}">
-        <div class="option-label">星期</div>
+        <div class="option-label">曜日</div>
         <div class="week-selector">
           ${[0, 1, 2, 3, 4, 5, 6].map(day => `
             <button class="toggle-btn ${rule.weekdays.includes(day) ? "active" : ""}" type="button" data-day="${day}">
@@ -393,7 +399,7 @@ function renderSettingsUI() {
           `).join("")}
         </div>
         <div class="nth-wrapper ${rule.mode !== "nth" ? "hidden" : ""}">
-          <div class="option-label">第几周</div>
+          <div class="option-label">対象週</div>
           <div class="nth-selector">
             ${[1, 2, 3, 4, 5].map(nth => `
               <button class="toggle-btn ${rule.nth.includes(nth) ? "active" : ""}" type="button" data-nth="${nth}">
@@ -471,7 +477,7 @@ async function exportCurrentMonthPdf() {
     }).from(target).save();
   } catch (err) {
     console.error(err);
-    alert("PDF 生成失败，请稍后再试。");
+    alert("PDF の生成に失敗しました。時間をおいてもう一度お試しください。");
   } finally {
     document.body.classList.remove("exporting-pdf");
     isExporting = false;
@@ -512,7 +518,7 @@ async function exportWholeYearPdf() {
     }).from(tempRoot).save();
   } catch (err) {
     console.error(err);
-    alert("年度 PDF 生成失败，请稍后再试。");
+    alert("年間 PDF の生成に失敗しました。時間をおいてもう一度お試しください。");
   } finally {
     tempRoot.remove();
     currentDate = backupDate;
@@ -526,6 +532,7 @@ function init() {
   const state = loadState();
   types = state.types;
   rules = state.rules;
+  persistState();
 
   renderCalendar();
   renderLegend();

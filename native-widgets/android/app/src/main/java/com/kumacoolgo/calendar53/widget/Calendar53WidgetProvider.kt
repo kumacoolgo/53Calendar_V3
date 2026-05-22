@@ -45,7 +45,7 @@ class Calendar53WidgetProvider : AppWidgetProvider() {
 }
 
 private object CalendarBitmapRenderer {
-    private val weekdays = listOf("日", "一", "二", "三", "四", "五", "六")
+    private val weekdays = listOf("日", "月", "火", "水", "木", "金", "土")
 
     fun render(rawJson: String?): Bitmap {
         val width = 900

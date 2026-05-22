@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="ja">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>53 Calendar</title>
-  <meta name="description" content="可自定义规则的垃圾收集日历，支持 PWA 与原生桌面小组件数据输出。" />
+  <meta name="description" content="収集ルールを自由に設定できる日本向けごみ収集カレンダー。PWA とホーム画面ウィジェット用データ出力に対応。" />
   <meta name="theme-color" content="#f8fafc" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-title" content="53 Calendar" />
@@ -19,21 +19,21 @@
   <main id="pdfArea">
     <header class="header">
       <div class="month-nav">
-        <button class="btn-icon" id="prevMonth" aria-label="上个月">
+        <button class="btn-icon" id="prevMonth" aria-label="前の月">
           <i class="fa-solid fa-chevron-left"></i>
         </button>
         <div class="month-title" id="monthLabel"></div>
-        <button class="btn-icon" id="nextMonth" aria-label="下个月">
+        <button class="btn-icon" id="nextMonth" aria-label="次の月">
           <i class="fa-solid fa-chevron-right"></i>
         </button>
       </div>
 
       <div class="header-actions">
-        <button class="btn-icon btn-today" id="todayBtn" type="button">今天</button>
-        <button class="btn-icon btn-print" id="printBtn" type="button" aria-label="导出 PDF" title="导出 PDF">
+        <button class="btn-icon btn-today" id="todayBtn" type="button">今日</button>
+        <button class="btn-icon btn-print" id="printBtn" type="button" aria-label="PDF に出力" title="PDF に出力">
           <i class="fa-solid fa-print"></i>
         </button>
-        <button class="btn-settings" id="openSettings" type="button" aria-label="设置">
+        <button class="btn-settings" id="openSettings" type="button" aria-label="設定">
           <i class="fa-solid fa-sliders"></i>
         </button>
       </div>
@@ -41,36 +41,36 @@
 
     <div id="bannerContainer"></div>
 
-    <section class="calendar-container" aria-label="当前月份日历">
+    <section class="calendar-container" aria-label="今月のカレンダー">
       <div class="calendar-inner">
         <div class="weekdays">
           <div class="sun">日</div>
-          <div>一</div>
-          <div>二</div>
-          <div>三</div>
-          <div>四</div>
-          <div>五</div>
-          <div class="sat">六</div>
+          <div>月</div>
+          <div>火</div>
+          <div>水</div>
+          <div>木</div>
+          <div>金</div>
+          <div class="sat">土</div>
         </div>
         <div class="days-grid" id="calendarGrid"></div>
       </div>
     </section>
   </main>
 
-  <section class="legend" id="legendContainer" aria-label="分类图例"></section>
+  <section class="legend" id="legendContainer" aria-label="分類の凡例"></section>
 
   <div class="modal-overlay" id="printChoiceModal">
     <div class="modal-card modal-card-sm">
       <div class="modal-header">
-        <div class="modal-title">导出 PDF</div>
-        <button class="modal-close-btn" id="closePrintChoice" type="button" aria-label="关闭">
+        <div class="modal-title">PDF に出力</div>
+        <button class="modal-close-btn" id="closePrintChoice" type="button" aria-label="閉じる">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
       <div class="modal-body">
         <div class="print-choice-actions">
-          <button class="btn-save" id="printMonthBtn" type="button">当前月</button>
-          <button class="btn-save" id="printYearBtn" type="button">全年 12 个月</button>
+          <button class="btn-save" id="printMonthBtn" type="button">今月</button>
+          <button class="btn-save" id="printYearBtn" type="button">年間 12か月</button>
         </div>
       </div>
     </div>
@@ -79,8 +79,8 @@
   <div class="modal-overlay" id="detailModal">
     <div class="modal-card">
       <div class="modal-header">
-        <div class="modal-title">收集详情</div>
-        <button class="modal-close-btn" id="closeDetail" type="button" aria-label="关闭">
+        <div class="modal-title">収集内容</div>
+        <button class="modal-close-btn" id="closeDetail" type="button" aria-label="閉じる">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
@@ -90,7 +90,7 @@
         <div id="detailList"></div>
       </div>
       <div class="modal-footer">
-        <button class="btn-save" id="okDetail" type="button">关闭</button>
+        <button class="btn-save" id="okDetail" type="button">閉じる</button>
       </div>
     </div>
   </div>
@@ -98,20 +98,20 @@
   <div class="modal-overlay" id="settingsModal">
     <div class="modal-card">
       <div class="modal-header">
-        <div class="modal-title">收集规则设置</div>
-        <button class="modal-close-btn" id="closeSettings" type="button" aria-label="关闭">
+        <div class="modal-title">収集ルール設定</div>
+        <button class="modal-close-btn" id="closeSettings" type="button" aria-label="閉じる">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
       <div class="modal-body">
         <button class="btn-add-type" id="addCategory" type="button">
-          <i class="fa-solid fa-plus"></i> 添加分类
+          <i class="fa-solid fa-plus"></i> 分類を追加
         </button>
         <div class="settings-list" id="settingsList"></div>
       </div>
       <div class="modal-footer">
-        <button class="btn-reset" id="resetSettings" type="button">恢复默认</button>
-        <button class="btn-save" id="saveSettings" type="button">保存并关闭</button>
+        <button class="btn-reset" id="resetSettings" type="button">初期設定に戻す</button>
+        <button class="btn-save" id="saveSettings" type="button">保存して閉じる</button>
       </div>
     </div>
   </div>

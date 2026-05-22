@@ -1,5 +1,5 @@
 const WIDGET_KEY = "calendar53-widget-data";
-const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
+const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
 
 function pad2(value) {
   return String(value).padStart(2, "0");

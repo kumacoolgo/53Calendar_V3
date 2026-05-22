@@ -1,4 +1,4 @@
-const CACHE_NAME = "calendar53-v3";
+const CACHE_NAME = "calendar53-v3-ja";
 const ASSETS = [
   "./",
   "./index.html",

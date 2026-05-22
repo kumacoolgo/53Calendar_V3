@@ -1,59 +1,59 @@
 # 53 Calendar V3
 
-一个可自定义垃圾收集规则的日历工具。V3 基于 V2 的纯 Web 版本整理而来，修复了乱码文案，并新增桌面小组件需要的当前月数据输出。
+日本向けのごみ収集カレンダーです。V3 は V2 の Web 版をベースに整理し、文字化けしていた表示を修正したうえで、ホーム画面ウィジェット用の今月データ出力を追加しています。
 
-## 功能
+## 機能
 
-- 查看当前月、上个月、下个月的收集安排
-- 自定义垃圾分类、每周规则、指定第几周规则
-- 明日收集提醒
-- 导出当前月或全年 PDF
-- PWA 离线缓存
-- `widget.html` 小组件预览页
-- iOS WidgetKit 与 Android AppWidget 原生源码模板
+- 今月、前月、次月の収集予定を表示
+- ごみ分類、毎週ルール、第何週ルールを自由に設定
+- 明日の収集予定を通知風に表示
+- 今月または年間 12か月の PDF 出力
+- PWA のオフラインキャッシュ
+- `widget.html` によるウィジェット表示プレビュー
+- iOS WidgetKit と Android AppWidget のネイティブ実装テンプレート
 
-## 本地运行
+## ローカル実行
 
 ```bash
 npm install
 npm run serve
 ```
 
-然后打开 `http://127.0.0.1:4173/index.html`。
+その後、`http://127.0.0.1:4173/index.html` を開きます。
 
-也可以直接打开 `index.html`，但 PWA 离线缓存和部分移动端安装能力需要 HTTP/HTTPS 环境。
+`index.html` を直接開いても動作しますが、PWA のオフラインキャッシュや一部のモバイルインストール機能には HTTP/HTTPS 環境が必要です。
 
-## 小组件数据
+## ウィジェット用データ
 
-主应用会把当前月数据写入：
+メインアプリは今月のデータを以下に出力します。
 
 - `localStorage["calendar53-widget-data"]`
 - `window.Calendar53WidgetData`
 - iOS WebView bridge：`window.webkit.messageHandlers.calendar53Widget.postMessage(data)`
 - Android WebView bridge：`window.Calendar53Android.updateWidgetData(JSON.stringify(data))`
 
-原生 App 需要把这份 JSON 同步到系统小组件可读取的共享存储：
+ネイティブアプリ側では、この JSON をシステムウィジェットから読める共有ストレージへ同期します。
 
 - iOS：`UserDefaults(suiteName: "group.com.kumacoolgo.calendar53")`
 - Android：`SharedPreferences("calendar53_widget")`
 
-模板代码在 `native-widgets/` 下。
+テンプレートコードは `native-widgets/` にあります。
 
-## iOS 桌面小组件接入
+## iOS ホーム画面ウィジェットの組み込み
 
-1. 用 Xcode 给 App 添加 Widget Extension。
-2. 复制 `native-widgets/ios/Calendar53Widget/Calendar53Widget.swift` 到 Widget Extension。
-3. 给 App target 和 Widget target 同时开启 App Groups，默认 group id 是 `group.com.kumacoolgo.calendar53`。
-4. 在承载 Web 页面的 App 中接收 `calendar53Widget` message handler，并把 JSON 字符串保存到同一个 App Group 的 `calendar53-widget-data`。
-5. 调用 `WidgetCenter.shared.reloadAllTimelines()` 刷新桌面小组件。
+1. Xcode で App に Widget Extension を追加します。
+2. `native-widgets/ios/Calendar53Widget/Calendar53Widget.swift` を Widget Extension にコピーします。
+3. App target と Widget target の両方で App Groups を有効にします。既定の group id は `group.com.kumacoolgo.calendar53` です。
+4. Web ページを表示している App で `calendar53Widget` message handler を受け取り、同じ App Group の `calendar53-widget-data` に JSON 文字列を保存します。
+5. `WidgetCenter.shared.reloadAllTimelines()` を呼び出してホーム画面ウィジェットを更新します。
 
-## Android 桌面小组件接入
+## Android ホーム画面ウィジェットの組み込み
 
-1. 把 `native-widgets/android/app/src/main/...` 合并进 Android App。
-2. 把 `native-widgets/android/AndroidManifest-snippet.xml` 中的 receiver 加进正式 `AndroidManifest.xml`。
-3. 在承载 Web 页面的 App 中实现 `Calendar53Android.updateWidgetData(json)`，保存到 `SharedPreferences("calendar53_widget")` 的 `calendar53-widget-data`。
-4. 发送 `com.kumacoolgo.calendar53.widget.REFRESH` 或调用 `AppWidgetManager.updateAppWidget` 刷新桌面小组件。
+1. `native-widgets/android/app/src/main/...` を Android App に取り込みます。
+2. `native-widgets/android/AndroidManifest-snippet.xml` の receiver を正式な `AndroidManifest.xml` に追加します。
+3. Web ページを表示している App で `Calendar53Android.updateWidgetData(json)` を実装し、`SharedPreferences("calendar53_widget")` の `calendar53-widget-data` に保存します。
+4. `com.kumacoolgo.calendar53.widget.REFRESH` を送信するか、`AppWidgetManager.updateAppWidget` を呼び出してホーム画面ウィジェットを更新します。
 
 ## 注意
 
-纯 PWA 不能在 iOS 上直接创建真正的系统桌面小组件。V3 已提供 Web/PWA 页面、widget 预览页和原生小组件源码；要上架或安装成 iOS/Android 桌面小组件，需要把 Web 页面放进原生壳或现有原生 App 中接入这些模板。
+純粋な PWA だけでは、iOS の本物のホーム画面ウィジェットを直接作成できません。V3 では Web/PWA ページ、ウィジェット表示プレビュー、ネイティブウィジェットのテンプレートを用意しています。iOS/Android のホーム画面で「アプリを開かずに今月の予定を見る」には、Web ページをネイティブアプリまたは既存アプリに組み込んで、このテンプレートを接続してください。
