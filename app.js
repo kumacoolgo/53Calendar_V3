@@ -33,7 +33,7 @@ const DEFAULT_LABELS_BY_ID = Object.fromEntries(DEFAULT_TYPES.map(type => [type.
 
 const STORAGE_KEY = "calendar53-state-v3";
 const WIDGET_KEY = "calendar53-widget-data";
-const APP_BUILD = "pdf-one-page-2";
+const APP_BUILD = "native-print-one-page-4";
 const HOLIDAY_API_URL = "https://holidays-jp.github.io/api/v1/date.json";
 const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
 
@@ -474,37 +474,82 @@ function createPdfSnapshotNode(source) {
   return { wrapper, snapshot: cloneNode };
 }
 
-async function capturePdfAreaCanvas() {
+function withTimeout(promise, ms, label) {
+  let timer = null;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} timed out`)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
+}
+
+async function createPdfPageNode() {
   const source = document.getElementById("pdfArea");
   if (!source) throw new Error("PDF target is missing");
-
   const { wrapper, snapshot } = createPdfSnapshotNode(source);
-  try {
-    await waitForNextFrame();
-    await waitForNextFrame();
+  await waitForNextFrame();
+  await waitForNextFrame();
+  return { wrapper, snapshot };
+}
 
+async function saveSnapshotPdf(snapshot, filename) {
+  await withTimeout(
+    html2pdf()
+      .set({
+        margin: 0,
+        filename,
+        image: { type: "jpeg", quality: 0.92 },
+        html2canvas: {
+          scale: 1.35,
+          useCORS: true,
+          backgroundColor: "#ffffff",
+          logging: false,
+          imageTimeout: 5000,
+          windowWidth: 1123,
+          windowHeight: 794
+        },
+        jsPDF: { unit: "px", format: [1123, 794], orientation: "landscape", compress: true },
+        pagebreak: { mode: ["avoid-all"], avoid: ["#pdfAreaSnapshot", ".calendar-container", ".days-grid"] }
+      })
+      .from(snapshot)
+      .save(),
+    45000,
+    "PDF export"
+  );
+}
+
+async function capturePdfAreaCanvas() {
+  const { wrapper, snapshot } = await createPdfPageNode();
+  try {
     if (typeof window.html2canvas === "function") {
       return await window.html2canvas(snapshot, {
-        scale: 3,
+        scale: 1.35,
         useCORS: true,
         backgroundColor: "#ffffff",
-        logging: false
+        logging: false,
+        imageTimeout: 5000,
+        windowWidth: 1123,
+        windowHeight: 794
       });
     }
 
     const worker = html2pdf()
       .set({
         html2canvas: {
-          scale: 3,
+          scale: 1.35,
           useCORS: true,
           backgroundColor: "#ffffff",
-          logging: false
+          logging: false,
+          imageTimeout: 5000,
+          windowWidth: 1123,
+          windowHeight: 794
         }
       })
       .from(snapshot)
       .toCanvas();
-    await worker;
-    return await worker.get("canvas");
+    await withTimeout(worker, 45000, "PDF canvas");
+    return await withTimeout(worker.get("canvas"), 5000, "PDF canvas result");
   } finally {
     wrapper.remove();
   }
@@ -552,20 +597,24 @@ async function saveCanvasPdf(canvases, filename) {
 }
 
 async function exportCurrentMonthPdf() {
-  if (isExporting || typeof html2pdf === "undefined") return;
+  if (isExporting) return;
   isExporting = true;
-  const filename = `53-calendar-${currentDate.getFullYear()}-${pad2(currentDate.getMonth() + 1)}.pdf`;
+  const originalTitle = document.title;
+  document.title = `53-calendar-${currentDate.getFullYear()}-${pad2(currentDate.getMonth() + 1)}`;
 
   try {
     document.body.classList.add("exporting-pdf");
-    const canvas = await capturePdfAreaCanvas();
-    await saveCanvasPdf([canvas], filename);
+    await waitForNextFrame();
+    window.print();
   } catch (err) {
     console.error(err);
     alert("PDF の生成に失敗しました。時間をおいてもう一度お試しください。");
   } finally {
-    document.body.classList.remove("exporting-pdf");
-    isExporting = false;
+    setTimeout(() => {
+      document.title = originalTitle;
+      document.body.classList.remove("exporting-pdf");
+      isExporting = false;
+    }, 1000);
   }
 }
 
