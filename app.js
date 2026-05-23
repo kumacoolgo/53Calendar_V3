@@ -33,7 +33,7 @@ const DEFAULT_LABELS_BY_ID = Object.fromEntries(DEFAULT_TYPES.map(type => [type.
 
 const STORAGE_KEY = "calendar53-state-v3";
 const WIDGET_KEY = "calendar53-widget-data";
-const APP_BUILD = "direct-canvas-pdf-6";
+const APP_BUILD = "direct-canvas-pdf-7";
 const HOLIDAY_API_URL = "https://holidays-jp.github.io/api/v1/date.json";
 const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
 
@@ -608,12 +608,6 @@ function createMonthPdfCanvas(date) {
     const row = Math.floor(index / 7);
     const x = gridX + colWidth * col;
     const y = gridY + headerHeight + rowHeight * row;
-
-    if (day.isToday) {
-      ctx.fillStyle = "#fffbeb";
-      ctx.fillRect(x + 1, y + 1, colWidth - 2, rowHeight - 2);
-      strokeRoundRect(ctx, x + 5, y + 5, colWidth - 10, rowHeight - 10, 4, "#f59e0b", 3);
-    }
 
     ctx.fillStyle = day.holiday || day.weekday === 0 ? "#dc2626" : day.weekday === 6 ? "#2563eb" : "#172033";
     ctx.font = '800 24px -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif';
