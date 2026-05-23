@@ -33,7 +33,7 @@ const DEFAULT_LABELS_BY_ID = Object.fromEntries(DEFAULT_TYPES.map(type => [type.
 
 const STORAGE_KEY = "calendar53-state-v3";
 const WIDGET_KEY = "calendar53-widget-data";
-const APP_BUILD = "native-print-one-page-4";
+const APP_BUILD = "direct-canvas-pdf-5";
 const HOLIDAY_API_URL = "https://holidays-jp.github.io/api/v1/date.json";
 const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
 
@@ -584,6 +584,196 @@ function drawCanvasToPdfPage(pdf, canvas, marginMm = 4) {
   pdf.addImage(canvas.toDataURL("image/jpeg", 0.98), "JPEG", offsetX, offsetY, drawWidth, drawHeight);
 }
 
+const PDF_CANVAS_WIDTH = 1600;
+const PDF_CANVAS_HEIGHT = 1131;
+
+function hexToRgb(hex, fallback = [255, 255, 255]) {
+  if (!hex || typeof hex !== "string") return fallback;
+  const cleaned = hex.replace("#", "").trim();
+  if (!/^[0-9a-f]{6}$/i.test(cleaned)) return fallback;
+  return [
+    parseInt(cleaned.slice(0, 2), 16),
+    parseInt(cleaned.slice(2, 4), 16),
+    parseInt(cleaned.slice(4, 6), 16)
+  ];
+}
+
+function colorWithAlpha(hex, alpha = 1) {
+  const [r, g, b] = hexToRgb(hex);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function drawRoundRect(ctx, x, y, width, height, radius) {
+  const r = Math.min(radius, width / 2, height / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + width - r, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+  ctx.lineTo(x + width, y + height - r);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+  ctx.lineTo(x + r, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function fillRoundRect(ctx, x, y, width, height, radius, fillStyle) {
+  drawRoundRect(ctx, x, y, width, height, radius);
+  ctx.fillStyle = fillStyle;
+  ctx.fill();
+}
+
+function strokeRoundRect(ctx, x, y, width, height, radius, strokeStyle, lineWidth = 1) {
+  drawRoundRect(ctx, x, y, width, height, radius);
+  ctx.strokeStyle = strokeStyle;
+  ctx.lineWidth = lineWidth;
+  ctx.stroke();
+}
+
+function fitText(ctx, text, maxWidth, baseSize, minSize = 13) {
+  let size = baseSize;
+  ctx.font = `700 ${size}px -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif`;
+  while (size > minSize && ctx.measureText(text).width > maxWidth) {
+    size -= 1;
+    ctx.font = `700 ${size}px -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif`;
+  }
+}
+
+function drawPdfLabel(ctx, text, x, y, width, bgColor, textColor) {
+  const height = 24;
+  fillRoundRect(ctx, x, y, width, height, 5, bgColor);
+  ctx.fillStyle = textColor;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  fitText(ctx, text, width - 12, 15, 10);
+  ctx.fillText(text, x + 7, y + height / 2 + 1, width - 12);
+}
+
+function createMonthPdfCanvas(date) {
+  const data = buildMonthData(date);
+  const canvas = document.createElement("canvas");
+  canvas.width = PDF_CANVAS_WIDTH;
+  canvas.height = PDF_CANVAS_HEIGHT;
+  const ctx = canvas.getContext("2d");
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const margin = 58;
+  const titleY = 70;
+  const gridX = margin;
+  const gridY = 118;
+  const gridWidth = canvas.width - margin * 2;
+  const gridHeight = canvas.height - gridY - 48;
+  const headerHeight = 58;
+  const rowCount = Math.max(5, data.days.length / 7);
+  const colWidth = gridWidth / 7;
+  const rowHeight = (gridHeight - headerHeight) / rowCount;
+
+  ctx.fillStyle = "#172033";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = '800 42px -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif';
+  ctx.fillText(data.title, canvas.width / 2, titleY);
+
+  fillRoundRect(ctx, gridX, gridY, gridWidth, gridHeight, 18, "#ffffff");
+  strokeRoundRect(ctx, gridX, gridY, gridWidth, gridHeight, 18, "#dde3ee", 3);
+
+  ctx.save();
+  drawRoundRect(ctx, gridX, gridY, gridWidth, gridHeight, 18);
+  ctx.clip();
+
+  ctx.fillStyle = "#f1f5f9";
+  ctx.fillRect(gridX, gridY, gridWidth, headerHeight);
+
+  data.weekdays.forEach((day, index) => {
+    ctx.fillStyle = index === 0 ? "#dc2626" : index === 6 ? "#2563eb" : "#667085";
+    ctx.font = '800 20px -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif';
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(day, gridX + colWidth * index + colWidth / 2, gridY + headerHeight / 2 + 1);
+  });
+
+  ctx.strokeStyle = "#dde3ee";
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(gridX, gridY + headerHeight);
+  ctx.lineTo(gridX + gridWidth, gridY + headerHeight);
+  ctx.stroke();
+
+  for (let col = 1; col < 7; col++) {
+    const x = gridX + colWidth * col;
+    ctx.beginPath();
+    ctx.moveTo(x, gridY + headerHeight);
+    ctx.lineTo(x, gridY + gridHeight);
+    ctx.stroke();
+  }
+
+  for (let row = 1; row < rowCount; row++) {
+    const y = gridY + headerHeight + rowHeight * row;
+    ctx.beginPath();
+    ctx.moveTo(gridX, y);
+    ctx.lineTo(gridX + gridWidth, y);
+    ctx.stroke();
+  }
+
+  data.days.forEach((day, index) => {
+    if (day.empty) return;
+    const col = index % 7;
+    const row = Math.floor(index / 7);
+    const x = gridX + colWidth * col;
+    const y = gridY + headerHeight + rowHeight * row;
+
+    if (day.isToday) {
+      ctx.fillStyle = "#fffbeb";
+      ctx.fillRect(x + 1, y + 1, colWidth - 2, rowHeight - 2);
+      strokeRoundRect(ctx, x + 5, y + 5, colWidth - 10, rowHeight - 10, 4, "#f59e0b", 3);
+    }
+
+    ctx.fillStyle = day.holiday || day.weekday === 0 ? "#dc2626" : day.weekday === 6 ? "#2563eb" : "#172033";
+    ctx.font = '800 24px -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif';
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    ctx.fillText(String(day.day), x + colWidth / 2, y + 14);
+
+    const maxLabels = Math.min(day.items.length, 4);
+    const labelX = x + 12;
+    const labelWidth = colWidth - 24;
+    const labelStartY = y + 54;
+    const labelGap = 8;
+
+    for (let i = 0; i < maxLabels; i++) {
+      const item = day.items[i];
+      drawPdfLabel(ctx, item.label, labelX, labelStartY + i * (24 + labelGap), labelWidth, item.bgColor, item.textColor);
+    }
+
+    if (day.items.length > maxLabels) {
+      drawPdfLabel(ctx, `+${day.items.length - maxLabels}`, labelX, labelStartY + maxLabels * (24 + labelGap), labelWidth, "#e5e7eb", "#667085");
+    }
+  });
+
+  ctx.restore();
+  return canvas;
+}
+
+async function saveMonthCanvasesPdf(canvases, filename) {
+  const PdfCtor = await getJsPdfCtor();
+  const pdf = new PdfCtor({
+    unit: "px",
+    format: [PDF_CANVAS_WIDTH, PDF_CANVAS_HEIGHT],
+    orientation: "landscape",
+    compress: true
+  });
+
+  canvases.forEach((canvas, index) => {
+    if (index > 0) pdf.addPage([PDF_CANVAS_WIDTH, PDF_CANVAS_HEIGHT], "landscape");
+    pdf.addImage(canvas.toDataURL("image/jpeg", 0.94), "JPEG", 0, 0, PDF_CANVAS_WIDTH, PDF_CANVAS_HEIGHT);
+  });
+
+  pdf.save(filename);
+}
+
 async function saveCanvasPdf(canvases, filename) {
   const PdfCtor = await getJsPdfCtor();
   const pdf = new PdfCtor({ unit: "mm", format: "a4", orientation: "landscape", compress: false });
@@ -597,24 +787,19 @@ async function saveCanvasPdf(canvases, filename) {
 }
 
 async function exportCurrentMonthPdf() {
-  if (isExporting) return;
+  if (isExporting || typeof html2pdf === "undefined") return;
   isExporting = true;
-  const originalTitle = document.title;
-  document.title = `53-calendar-${currentDate.getFullYear()}-${pad2(currentDate.getMonth() + 1)}`;
+  const filename = `53-calendar-${currentDate.getFullYear()}-${pad2(currentDate.getMonth() + 1)}.pdf`;
 
   try {
-    document.body.classList.add("exporting-pdf");
     await waitForNextFrame();
-    window.print();
+    const canvas = createMonthPdfCanvas(currentDate);
+    await saveMonthCanvasesPdf([canvas], filename);
   } catch (err) {
     console.error(err);
     alert("PDF の生成に失敗しました。時間をおいてもう一度お試しください。");
   } finally {
-    setTimeout(() => {
-      document.title = originalTitle;
-      document.body.classList.remove("exporting-pdf");
-      isExporting = false;
-    }, 1000);
+    isExporting = false;
   }
 }
 
@@ -625,24 +810,20 @@ async function exportWholeYearPdf() {
   const year = backupDate.getFullYear();
 
   try {
-    document.body.classList.add("exporting-pdf", "exporting-yearly-pdf");
     const canvases = [];
 
     for (let month = 0; month < 12; month++) {
-      currentDate = startOfDay(new Date(year, month, 1));
-      renderCalendar();
+      canvases.push(createMonthPdfCanvas(startOfDay(new Date(year, month, 1))));
       await waitForNextFrame();
-      canvases.push(await capturePdfAreaCanvas());
     }
 
-    await saveCanvasPdf(canvases, `53-calendar-${year}-12months.pdf`);
+    await saveMonthCanvasesPdf(canvases, `53-calendar-${year}-12months.pdf`);
   } catch (err) {
     console.error(err);
     alert("年間 PDF の生成に失敗しました。時間をおいてもう一度お試しください。");
   } finally {
     currentDate = backupDate;
     renderCalendar();
-    document.body.classList.remove("exporting-pdf", "exporting-yearly-pdf");
     isExporting = false;
   }
 }
