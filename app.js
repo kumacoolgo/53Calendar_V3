@@ -33,7 +33,7 @@ const DEFAULT_LABELS_BY_ID = Object.fromEntries(DEFAULT_TYPES.map(type => [type.
 
 const STORAGE_KEY = "calendar53-state-v3";
 const WIDGET_KEY = "calendar53-widget-data";
-const APP_BUILD = "direct-canvas-pdf-5";
+const APP_BUILD = "direct-canvas-pdf-6";
 const HOLIDAY_API_URL = "https://holidays-jp.github.io/api/v1/date.json";
 const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
 
@@ -462,126 +462,10 @@ function waitForNextFrame() {
   return new Promise(resolve => requestAnimationFrame(() => resolve()));
 }
 
-function createPdfSnapshotNode(source) {
-  const cloneNode = source.cloneNode(true);
-  cloneNode.id = "pdfAreaSnapshot";
-  cloneNode.querySelectorAll(".btn-icon, .btn-settings, #bannerContainer").forEach(el => el.remove());
-
-  const wrapper = document.createElement("div");
-  wrapper.className = "pdf-snapshot-wrap";
-  wrapper.appendChild(cloneNode);
-  document.body.appendChild(wrapper);
-  return { wrapper, snapshot: cloneNode };
-}
-
-function withTimeout(promise, ms, label) {
-  let timer = null;
-  const timeout = new Promise((_, reject) => {
-    timer = setTimeout(() => reject(new Error(`${label} timed out`)), ms);
-  });
-  return Promise.race([promise, timeout]).finally(() => {
-    if (timer) clearTimeout(timer);
-  });
-}
-
-async function createPdfPageNode() {
-  const source = document.getElementById("pdfArea");
-  if (!source) throw new Error("PDF target is missing");
-  const { wrapper, snapshot } = createPdfSnapshotNode(source);
-  await waitForNextFrame();
-  await waitForNextFrame();
-  return { wrapper, snapshot };
-}
-
-async function saveSnapshotPdf(snapshot, filename) {
-  await withTimeout(
-    html2pdf()
-      .set({
-        margin: 0,
-        filename,
-        image: { type: "jpeg", quality: 0.92 },
-        html2canvas: {
-          scale: 1.35,
-          useCORS: true,
-          backgroundColor: "#ffffff",
-          logging: false,
-          imageTimeout: 5000,
-          windowWidth: 1123,
-          windowHeight: 794
-        },
-        jsPDF: { unit: "px", format: [1123, 794], orientation: "landscape", compress: true },
-        pagebreak: { mode: ["avoid-all"], avoid: ["#pdfAreaSnapshot", ".calendar-container", ".days-grid"] }
-      })
-      .from(snapshot)
-      .save(),
-    45000,
-    "PDF export"
-  );
-}
-
-async function capturePdfAreaCanvas() {
-  const { wrapper, snapshot } = await createPdfPageNode();
-  try {
-    if (typeof window.html2canvas === "function") {
-      return await window.html2canvas(snapshot, {
-        scale: 1.35,
-        useCORS: true,
-        backgroundColor: "#ffffff",
-        logging: false,
-        imageTimeout: 5000,
-        windowWidth: 1123,
-        windowHeight: 794
-      });
-    }
-
-    const worker = html2pdf()
-      .set({
-        html2canvas: {
-          scale: 1.35,
-          useCORS: true,
-          backgroundColor: "#ffffff",
-          logging: false,
-          imageTimeout: 5000,
-          windowWidth: 1123,
-          windowHeight: 794
-        }
-      })
-      .from(snapshot)
-      .toCanvas();
-    await withTimeout(worker, 45000, "PDF canvas");
-    return await withTimeout(worker.get("canvas"), 5000, "PDF canvas result");
-  } finally {
-    wrapper.remove();
-  }
-}
-
 async function getJsPdfCtor() {
   if (window.jspdf?.jsPDF) return window.jspdf.jsPDF;
   if (window.jsPDF) return window.jsPDF;
-
-  const seed = document.createElement("canvas");
-  seed.width = 1;
-  seed.height = 1;
-  const worker = html2pdf()
-    .set({ jsPDF: { unit: "mm", format: "a4", orientation: "landscape" } })
-    .from(seed, "canvas")
-    .toPdf();
-  await worker;
-  const pdf = await worker.get("pdf");
-  return pdf.constructor;
-}
-
-function drawCanvasToPdfPage(pdf, canvas, marginMm = 4) {
-  const pageWidth = pdf.internal.pageSize.getWidth();
-  const pageHeight = pdf.internal.pageSize.getHeight();
-  const maxWidth = pageWidth - marginMm * 2;
-  const maxHeight = pageHeight - marginMm * 2;
-  const ratio = Math.min(maxWidth / canvas.width, maxHeight / canvas.height);
-  const drawWidth = canvas.width * ratio;
-  const drawHeight = canvas.height * ratio;
-  const offsetX = (pageWidth - drawWidth) / 2;
-  const offsetY = (pageHeight - drawHeight) / 2;
-  pdf.addImage(canvas.toDataURL("image/jpeg", 0.98), "JPEG", offsetX, offsetY, drawWidth, drawHeight);
+  throw new Error("jsPDF is not available");
 }
 
 const PDF_CANVAS_WIDTH = 1600;
@@ -771,23 +655,24 @@ async function saveMonthCanvasesPdf(canvases, filename) {
     pdf.addImage(canvas.toDataURL("image/jpeg", 0.94), "JPEG", 0, 0, PDF_CANVAS_WIDTH, PDF_CANVAS_HEIGHT);
   });
 
-  pdf.save(filename);
+  downloadPdf(pdf, filename);
 }
 
-async function saveCanvasPdf(canvases, filename) {
-  const PdfCtor = await getJsPdfCtor();
-  const pdf = new PdfCtor({ unit: "mm", format: "a4", orientation: "landscape", compress: false });
-
-  canvases.forEach((canvas, index) => {
-    if (index > 0) pdf.addPage("a4", "landscape");
-    drawCanvasToPdfPage(pdf, canvas);
-  });
-
-  pdf.save(filename);
+function downloadPdf(pdf, filename) {
+  const blob = pdf.output("blob");
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.rel = "noopener";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 30000);
 }
 
 async function exportCurrentMonthPdf() {
-  if (isExporting || typeof html2pdf === "undefined") return;
+  if (isExporting) return;
   isExporting = true;
   const filename = `53-calendar-${currentDate.getFullYear()}-${pad2(currentDate.getMonth() + 1)}.pdf`;
 
@@ -804,7 +689,7 @@ async function exportCurrentMonthPdf() {
 }
 
 async function exportWholeYearPdf() {
-  if (isExporting || typeof html2pdf === "undefined") return;
+  if (isExporting) return;
   isExporting = true;
   const backupDate = new Date(currentDate);
   const year = backupDate.getFullYear();
